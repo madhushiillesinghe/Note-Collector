@@ -15,4 +15,5 @@ public class NoteCollectorV2Application {
 	public ModelMapper modelMapper() {
 		return new ModelMapper();
 	}
+
 }

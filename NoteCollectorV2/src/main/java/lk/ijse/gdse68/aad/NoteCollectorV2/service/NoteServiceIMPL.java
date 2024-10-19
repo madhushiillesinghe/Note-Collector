@@ -5,7 +5,6 @@ import jakarta.transaction.Transactional;
 import lk.ijse.gdse68.aad.NoteCollectorV2.customObj.NoteErrorResponse;
 import lk.ijse.gdse68.aad.NoteCollectorV2.customObj.NoteResponse;
 import lk.ijse.gdse68.aad.NoteCollectorV2.dao.NoteDao;
-import lk.ijse.gdse68.aad.NoteCollectorV2.dao.UserDao;
 import lk.ijse.gdse68.aad.NoteCollectorV2.dto.NoteDto;
 import lk.ijse.gdse68.aad.NoteCollectorV2.entity.NoteEntity;
 import lk.ijse.gdse68.aad.NoteCollectorV2.exception.DataPersistFailedException;
@@ -20,24 +19,20 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class NoteServiceImpl implements NoteService {
+public  class NoteServiceIMPL implements NoteService {
     @Autowired
-   private NoteDao noteDao;
-    @Autowired
-    private UserDao userDao;
+    private NoteDao noteDao;
     @Autowired
     private Mapping mapping;
-
     @Override
-    public void saveNote( NoteDto noteDto) {
-        noteDto.setNoteId(AppUtil.createNoteId());
-        var noteEntity = mapping.convertToEntity(noteDto);
-
-        var savedNote =  noteDao.save(noteEntity);
-        if (savedNote == null){
-            throw new DataPersistFailedException("cannot saved note");
+    public void saveNote(NoteDto noteDTO) {
+        noteDTO.setNoteId(AppUtil.createNoteId());
+        var noteEntity = mapping.convertToEntity(noteDTO);
+        var savedNoted = noteDao.save(noteEntity);
+        if(savedNoted == null){
+            throw new DataPersistFailedException("Cannot save note");
         }
-}
+    }
     @Override
     public void updateNote(String noteId, NoteDto incomeNoteDTO) {
         Optional<NoteEntity> tmpNoteEntity= noteDao.findById(noteId);
@@ -50,28 +45,29 @@ public class NoteServiceImpl implements NoteService {
             tmpNoteEntity.get().setPriorityLevel(incomeNoteDTO.getPriorityLevel());
         }
     }
-
     @Override
     public void deleteNote(String noteId) {
+//        noteDao.deleteById(noteId);
         Optional<NoteEntity> findId = noteDao.findById(noteId);
-        if (!findId.isPresent()) {
+        if(!findId.isPresent()){
             throw new NoteNotFound("Note not found");
-        } else {
+        }else {
             noteDao.deleteById(noteId);
         }
-
     }
     @Override
-    public NoteResponse getSelectNote(String noteId) {
+    public NoteResponse getSelectedNote(String noteId) {
         if(noteDao.existsById(noteId)){
             return mapping.convertToDTO(noteDao.getReferenceById(noteId));
         }else {
             return new NoteErrorResponse(0,"Note not found");
-        }    }
-
-    @Override
-    public List<NoteDto> getAllNote() {
-       return  mapping.convertToDTO(noteDao.findAll());
+        }
     }
-
+    @Override
+    public List<NoteDto> getAllNotes() {
+//        List<NoteEntity> getAllNotes = noteDao.findAll();
+//        List<NoteDTO> noteDTOS = mapping.convertToDTO(getAllNotes);
+//        return noteDTOS;
+        return mapping.convertToDTO(noteDao.findAll());
+    }
 }

@@ -1,7 +1,7 @@
 package lk.ijse.gdse68.aad.NoteCollectorV2.controller;
 
 
-
+import lk.ijse.gdse68.aad.NoteCollectorV2.customObj.NoteErrorResponse;
 import lk.ijse.gdse68.aad.NoteCollectorV2.customObj.NoteResponse;
 import lk.ijse.gdse68.aad.NoteCollectorV2.dto.NoteDto;
 import lk.ijse.gdse68.aad.NoteCollectorV2.exception.DataPersistFailedException;
@@ -12,18 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/note")
+@RequestMapping("api/v1/notes")
 @RequiredArgsConstructor
 public class NoteController {
-
     @Autowired
     private final NoteService noteService;
-
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createNote(@RequestBody NoteDto note) {
@@ -31,31 +30,31 @@ public class NoteController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }else {
             try {
-                System.out.println(note + " Controller");
                 noteService.saveNote(note);
                 return new ResponseEntity<>(HttpStatus.CREATED);
             }catch (DataPersistFailedException e){
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }catch (Exception e){
-                e.printStackTrace();
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
     }
-    @GetMapping(value = "/allnotes",produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "allnotes", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<NoteDto> getAllNotes(){
-        return noteService.getAllNote();
+        return noteService.getAllNotes();
     }
-    @GetMapping(value = "/{noteId}",produces =MediaType.APPLICATION_JSON_VALUE )
-    public NoteResponse getNote(@PathVariable("noteId") String noteId){
-        return noteService.getSelectNote(noteId);
+    @GetMapping(value = "/{noteId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public NoteResponse getSelectedNote(@PathVariable ("noteId") String noteId)  {
+        if(noteId.isEmpty() || noteId == null){
+            return new NoteErrorResponse(1,"Not valid note id");
+        }
+        return noteService.getSelectedNote(noteId);
     }
-
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PutMapping(value = "/{noteId}",consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "/{noteId}",produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> updateNote(@PathVariable ("noteId") String noteId, @RequestBody NoteDto note) {
         try {
-            if (note == null && (noteId == null || note.equals(""))){
+            if (note == null && (noteId == null || noteId.isEmpty())) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             noteService.updateNote(noteId, note);
@@ -66,21 +65,15 @@ public class NoteController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-//    restfull widiyt karanne
-    @DeleteMapping(value = "/{noteId}")
-//    responsee entity is object using spring
+    @DeleteMapping(value ="/{noteId}" )
     public ResponseEntity<Void> deleteNote(@PathVariable ("noteId") String noteId) {
-        try{
+        try {
             noteService.deleteNote(noteId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-
         }catch (NoteNotFound e){
-            return new  ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-
         }
-
     }
-    }
+}

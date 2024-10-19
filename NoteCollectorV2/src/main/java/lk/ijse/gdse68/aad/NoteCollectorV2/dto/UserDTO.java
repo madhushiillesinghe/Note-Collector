@@ -18,5 +18,6 @@ public class UserDTO implements SuperDTO, UserResponse {
     private String email;
     private String password;
     private String profilepic;
+    private String role;
     private List<NoteEntity> notes;
 }
